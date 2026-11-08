@@ -57,8 +57,11 @@ namespace {
 
 constexpr char kTag[] = "chatbot_voice";
 constexpr char kFaqPath[] = "/spiffs/faq.txt";
+constexpr char kVoicePromptPath[] = "/spiffs/voice_prompts.txt";
 constexpr uint16_t kAudioStreamPort = 3333;
-constexpr size_t kMaximumFaqEntries = 192;
+// MultiNet5 reports command-table overflow at its nominal 200-command limit.
+constexpr size_t kMaximumFaqEntries =
+    std::min<size_t>(ESP_MN_MAX_PHRASE_NUM, 192);
 constexpr size_t kMaximumWavBytes = 640 * 1024;
 constexpr size_t kMaximumTtsTextBytes = 1023;
 constexpr size_t kAudioTransferChunkBytes = 1024;
@@ -140,33 +143,9 @@ bool isPrimaryVoicePhrase(const std::string &id)
         return false;
     }
     if (hasNumberedVariantSuffix(id)) {
-        return hasVariantSuffix(id, "_01") && id != "affordance_01";
+        return hasVariantSuffix(id, "_01");
     }
     return true;
-}
-
-bool isExtraVoicePhrase(const std::string &id)
-{
-    constexpr std::array<const char *, 19> kAliasTopics = {
-        "hci",           "hmi",             "user_interface",
-        "user_experience", "interaction_design", "design_thinking",
-        "usability",     "accessibility",   "wcag",
-        "prototype",     "usability_testing", "user_research",
-        "user_interview", "persona",         "journey_map",
-        "wireframe",     "voice_interface", "microcontroller",
-        "wake_word"};
-
-    if (!hasVariantSuffix(id, "_02") && !hasVariantSuffix(id, "_03") &&
-        !hasVariantSuffix(id, "_10")) {
-        return false;
-    }
-    for (const char *topic : kAliasTopics) {
-        const std::string prefix = std::string(topic) + "_";
-        if (id.compare(0, prefix.size(), prefix) == 0) {
-            return true;
-        }
-    }
-    return false;
 }
 
 bool loadFaq()
@@ -176,11 +155,9 @@ bool loadFaq()
         ESP_LOGE(kTag, "Could not open %s; build and flash the FAQ image.", kFaqPath);
         return false;
     }
-
     char line[2048];
     size_t line_number = 0;
     size_t skipped = 0;
-    std::vector<FaqEntry> extra_voice_phrases;
     while (std::fgets(line, sizeof(line), file) != nullptr) {
         ++line_number;
         size_t length = std::strlen(line);
@@ -205,8 +182,7 @@ bool loadFaq()
             ++skipped;
             continue;
         }
-        const bool extra_voice_phrase = isExtraVoicePhrase(entry.id);
-        if (!extra_voice_phrase && !isPrimaryVoicePhrase(entry.id)) {
+        if (!isPrimaryVoicePhrase(entry.id)) {
             continue;
         }
         if (entry.question.size() > ESP_MN_MAX_PHRASE_LEN) {
@@ -215,29 +191,107 @@ bool loadFaq()
             ++skipped;
             continue;
         }
-        if (extra_voice_phrase) {
-            extra_voice_phrases.push_back(std::move(entry));
-            continue;
-        }
         if (g_faq.size() < kMaximumFaqEntries) {
             g_faq.push_back(std::move(entry));
         }
     }
     std::fclose(file);
 
-    for (FaqEntry &entry : extra_voice_phrases) {
-        if (g_faq.size() == kMaximumFaqEntries) {
-            break;
-        }
-        g_faq.push_back(std::move(entry));
-    }
-
     if (g_faq.empty()) {
         ESP_LOGE(kTag, "No usable FAQ questions were loaded.");
         return false;
     }
+
+    FILE *prompt_file = std::fopen(kVoicePromptPath, "r");
+    if (prompt_file == nullptr) {
+        ESP_LOGE(kTag, "Could not open %s; rebuild and flash the FAQ image.",
+                 kVoicePromptPath);
+        return false;
+    }
+
+    std::vector<std::string> loaded_prompt_ids;
+    size_t prompt_line_number = 0;
+    bool prompts_valid = true;
+    while (std::fgets(line, sizeof(line), prompt_file) != nullptr) {
+        ++prompt_line_number;
+        size_t length = std::strlen(line);
+        if (length > 0 && line[length - 1] == '\n') {
+            line[--length] = '\0';
+        }
+        if (length > 0 && line[length - 1] == '\r') {
+            line[--length] = '\0';
+        }
+        if (line[0] == '\0' || line[0] == '#') {
+            continue;
+        }
+        if (length == sizeof(line) - 1 && line[length - 1] != '\n') {
+            ESP_LOGE(kTag, "Voice prompt line %u is too long.",
+                     static_cast<unsigned>(prompt_line_number));
+            prompts_valid = false;
+            break;
+        }
+
+        char *separator = std::strchr(line, '|');
+        if (separator == nullptr || separator == line ||
+            separator[1] == '\0' || std::strchr(separator + 1, '|') != nullptr) {
+            ESP_LOGE(kTag, "Malformed voice prompt on line %u.",
+                     static_cast<unsigned>(prompt_line_number));
+            prompts_valid = false;
+            break;
+        }
+        *separator = '\0';
+        const std::string id = line;
+        const std::string question = separator + 1;
+        if (!hasVariantSuffix(id, "_01") ||
+            question.size() > ESP_MN_MAX_PHRASE_LEN ||
+            std::find(loaded_prompt_ids.begin(), loaded_prompt_ids.end(), id) !=
+                loaded_prompt_ids.end()) {
+            ESP_LOGE(kTag, "Invalid or duplicate voice prompt for FAQ id %s.",
+                     id.c_str());
+            prompts_valid = false;
+            break;
+        }
+
+        auto entry = std::find_if(
+            g_faq.begin(), g_faq.end(),
+            [&id](const FaqEntry &candidate) { return candidate.id == id; });
+        if (entry == g_faq.end()) {
+            ESP_LOGE(kTag, "Voice prompt references unknown FAQ id %s.",
+                     id.c_str());
+            prompts_valid = false;
+            break;
+        }
+        entry->question = question;
+        loaded_prompt_ids.push_back(id);
+    }
+    std::fclose(prompt_file);
+    if (!prompts_valid) {
+        return false;
+    }
+
+    size_t topic_count = 0;
+    for (const FaqEntry &entry : g_faq) {
+        if (hasVariantSuffix(entry.id, "_01")) {
+            ++topic_count;
+            if (std::find(loaded_prompt_ids.begin(), loaded_prompt_ids.end(),
+                          entry.id) == loaded_prompt_ids.end()) {
+                ESP_LOGE(kTag, "Missing plain-language voice prompt for FAQ id %s.",
+                         entry.id.c_str());
+                return false;
+            }
+        }
+    }
+    if (loaded_prompt_ids.size() != topic_count) {
+        ESP_LOGE(kTag, "Loaded %u voice prompts for %u FAQ topics.",
+                 static_cast<unsigned>(loaded_prompt_ids.size()),
+                 static_cast<unsigned>(topic_count));
+        return false;
+    }
+
     ESP_LOGI(kTag, "Loaded %u voice phrases (%u entries skipped).",
              (unsigned)g_faq.size(), (unsigned)skipped);
+    ESP_LOGI(kTag, "Applied %u plain-language topic prompts.",
+             static_cast<unsigned>(loaded_prompt_ids.size()));
     return true;
 }
 
@@ -343,6 +397,17 @@ bool initializeSpeechRecognition()
     if (command_errors != nullptr) {
         ESP_LOGW(kTag, "MultiNet rejected %d FAQ phrase(s).",
                  command_errors->num);
+        for (int index = 0; index < command_errors->num; ++index) {
+            const esp_mn_phrase_t *phrase =
+                command_errors->phrases != nullptr
+                    ? command_errors->phrases[index]
+                    : nullptr;
+            ESP_LOGW(kTag, "Rejected command %d: %s",
+                     phrase != nullptr ? phrase->command_id : -1,
+                     phrase != nullptr && phrase->string != nullptr
+                         ? phrase->string
+                         : "(unknown phrase)");
+        }
     }
 
     char *wake_model = esp_srmodel_filter(g_models, ESP_WN_PREFIX, nullptr);

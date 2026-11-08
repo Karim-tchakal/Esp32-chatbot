@@ -244,11 +244,72 @@ inline bool containsWholePhrase(const std::string& candidate,
   return false;
 }
 
+inline std::string definitionTopicQuery(const std::string& normalizedQuery) {
+  static constexpr std::array<const char*, 11> prefixes = {
+      "what is the definition of ", "what is the meaning of ",
+      "can you explain ",           "could you explain ",
+      "please explain ",            "definition of ",
+      "explanation of ",            "meaning of ",
+      "define ",                    "describe ",
+      "explain "};
+  for (const char* prefix : prefixes) {
+    const std::string prefixText(prefix);
+    if (normalizedQuery.compare(0, prefixText.size(), prefixText) == 0) {
+      return normalizedQuery.substr(prefixText.size());
+    }
+  }
+
+  constexpr char kWhatDoesPrefix[] = "what does ";
+  constexpr char kMeanSuffix[] = " mean";
+  if (normalizedQuery.compare(0, sizeof(kWhatDoesPrefix) - 1,
+                             kWhatDoesPrefix) == 0 &&
+      normalizedQuery.size() > sizeof(kWhatDoesPrefix) - 1 +
+                                   sizeof(kMeanSuffix) - 1 &&
+      normalizedQuery.compare(normalizedQuery.size() -
+                                  (sizeof(kMeanSuffix) - 1),
+                              sizeof(kMeanSuffix) - 1, kMeanSuffix) == 0) {
+    return normalizedQuery.substr(
+        sizeof(kWhatDoesPrefix) - 1,
+        normalizedQuery.size() - (sizeof(kWhatDoesPrefix) - 1) -
+            (sizeof(kMeanSuffix) - 1));
+  }
+
+  return normalizedQuery;
+}
+
 }  // namespace detail
 
 inline int similarity(const std::string& query, const std::string& candidate) {
   const std::string normalizedQuery = detail::normalize(query);
   const std::string normalizedCandidate = detail::normalize(candidate);
+  const std::string topicQuery =
+      detail::definitionTopicQuery(normalizedQuery);
+  if (topicQuery != normalizedQuery) {
+    if (detail::containsWholePhrase(normalizedCandidate, normalizedQuery)) {
+      return 100;
+    }
+    const std::vector<std::string> topicTokens = detail::tokens(topicQuery);
+    const std::vector<std::string> candidateTokens = detail::tokens(candidate);
+    if (topicTokens.size() == 1 &&
+        detail::hasExactTokenMatch(topicTokens.front(), candidateTokens)) {
+      const size_t extraCandidateTokens =
+          candidateTokens.size() > 0 ? candidateTokens.size() - 1 : 0;
+      return std::max(
+          55, 100 - static_cast<int>(std::min<size_t>(
+                       extraCandidateTokens * 15, 45)));
+    }
+    const int topicScore = similarity(topicQuery, candidate);
+    if (topicScore == 100 && topicTokens.size() > 1 &&
+        candidateTokens.size() > topicTokens.size()) {
+      const size_t extraCandidateTokens =
+          candidateTokens.size() - topicTokens.size();
+      return std::max(
+          55, 100 - static_cast<int>(std::min<size_t>(
+                       extraCandidateTokens * 15, 45)));
+    }
+    return topicScore;
+  }
+
   const std::vector<std::string> queryPhraseTokens =
       detail::phraseTokens(query);
   const std::vector<std::string> queryTokens = detail::tokens(query);

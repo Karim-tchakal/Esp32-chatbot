@@ -1,0 +1,109 @@
+# FAQ ID|plain-language question spoken to the voice assistant
+hci_01|How do people use computers well?
+hmi_01|How do people interact with machines?
+user_interface_01|What do I use to control an app?
+user_experience_01|How does a product feel to use?
+interaction_design_01|How should a product respond when I use it?
+user_centered_design_01|How do we design around people's needs?
+design_thinking_01|How can I come up with and test new ideas?
+usability_01|What makes an app easy to use?
+accessibility_01|How can people with disabilities use a website?
+inclusive_design_01|How do I design for different kinds of people?
+learnability_01|How quickly can a new user learn an app?
+memorability_01|Will people remember how to use this later?
+efficiency_01|How can users finish a task faster?
+effectiveness_01|Can users complete what they came to do?
+satisfaction_01|How can I tell if people enjoy using this?
+utility_01|Does this product have the features people need?
+affordance_01|How can I tell what actions an object lets me do?
+signifier_01|How can people tell what they can click?
+mapping_01|Does each control do what people expect?
+feedback_01|How can an app show that an action worked?
+constraints_01|How can I stop people choosing invalid options?
+consistency_01|Why should controls work the same across screens?
+visibility_01|How can I show what is happening in the app?
+user_control_01|How can users undo or cancel an action?
+error_prevention_01|How can I help users avoid mistakes?
+error_recovery_01|How can users fix a mistake and keep their work?
+recognition_recall_01|How can an app show choices instead of making people remember?
+flexibility_01|How can an app work for beginners and experts?
+minimalist_design_01|How do I keep a screen simple but useful?
+real_world_match_01|Why should an app use familiar words?
+cognitive_load_01|Why do crowded screens feel hard to use?
+mental_model_01|What do people expect to happen when they use an app?
+conceptual_model_01|How can I explain how an app works to people?
+information_architecture_01|How should I organize pages so people can find things?
+navigation_01|How do users know where to go next?
+visual_hierarchy_01|How do I make the most important things stand out?
+gestalt_proximity_01|Why do nearby things look like they belong together?
+gestalt_similarity_01|Why do matching shapes or colors seem related?
+gestalt_closure_01|Why do we see a whole shape when part is missing?
+figure_ground_01|How can I make buttons stand out from the background?
+fitts_law_01|How big should buttons be and where should I put them?
+hicks_law_01|Why are too many choices hard to decide between?
+wcag_01|What rules help make websites accessible?
+pour_01|What should an accessible website let people do?
+keyboard_accessibility_01|Can I use a website without a mouse?
+screen_reader_01|How can a blind person hear what is on a webpage?
+alt_text_01|How do I describe a picture for someone who cannot see?
+color_contrast_01|How can I make text easier to read on a screen?
+touch_targets_01|How big should buttons be on a phone?
+responsive_design_01|How do I make a site work on phones and computers?
+user_research_01|How can I find out what users need?
+user_interview_01|What should I ask someone about using a product?
+contextual_inquiry_01|How can I learn by watching people work?
+usability_observation_01|How can I watch users try a task and see what goes wrong?
+survey_01|How do I ask lots of people for feedback?
+persona_01|How can I summarize what a group of users needs?
+scenario_01|What might someone be trying to do with this product?
+task_analysis_01|How do I break a big task into smaller steps?
+journey_map_01|What is a person's experience from start to finish?
+user_flow_01|What steps does someone take to finish a task?
+wireframe_01|How can I sketch a screen before building it?
+mockup_01|What will the finished screen look like before it is built?
+prototype_01|How can I make a quick version to test an idea?
+low_fidelity_01|How can I test a rough paper sketch?
+high_fidelity_01|How can I test something close to the finished product?
+iterative_design_01|How can I improve a design using feedback?
+usability_testing_01|How can I see if people can use this product?
+ab_testing_01|Which of two versions works better for users?
+heuristic_evaluation_01|How can an expert check a screen for usability problems?
+cognitive_walkthrough_01|Can a new user figure out how to finish this task?
+think_aloud_01|How can I learn what users are thinking as they work?
+task_success_rate_01|How many people finish a task successfully?
+time_on_task_01|How long does it take people to finish a task?
+error_rate_01|How often do people make mistakes using this?
+sus_01|How can I measure how easy a product feels to use?
+onboarding_01|How can I help people get started with a new product?
+form_design_01|How can I make a form easy to fill out?
+input_validation_01|How can I check that form answers are correct?
+error_message_01|What should an app say when something goes wrong?
+notification_01|When should an app interrupt someone with a message?
+multimodal_01|Can people use touch, speech, and visuals together?
+voice_interface_01|How can people control a product by speaking?
+conversational_interface_01|How can a chat system help people finish tasks?
+haptic_feedback_01|How can vibration tell someone an action worked?
+microinteraction_01|How can a small animation confirm a button press?
+dashboard_01|How can one screen show the most important information?
+human_factors_01|How do human abilities affect product safety?
+ergonomics_01|How should tools fit the people using them?
+privacy_by_design_01|How can I protect privacy while building a product?
+data_minimization_01|What personal information do I really need to collect?
+embedded_system_01|How does a small computer inside a device work?
+microcontroller_01|What small chip controls an electronic device?
+cpu_01|What part of a computer runs instructions?
+ram_01|What memory does a computer use while it is running?
+flash_memory_01|How does a device remember files when it is powered off?
+esp32_psram_01|What extra working memory does this ESP32 have?
+firmware_01|What software controls a device's hardware?
+wifi_01|How do devices connect wirelessly on a local network?
+database_01|Where does the assistant store answers so it can find them?
+speech_recognition_01|How does the device know what I said?
+wake_word_01|What do I say to start talking to the assistant?
+text_to_speech_01|How does the assistant turn text into speech?
+voice_assistant_01|How does this assistant hear a question and answer?
+latency_01|Why does it take time for the assistant to answer?
+audio_buffer_01|Why does a device hold audio before playing it?
+llm_01|How can AI write answers to questions?
+api_01|How do two programs share information?
+http_01|How does a browser send messages to a server?

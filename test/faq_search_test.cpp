@@ -80,6 +80,16 @@ int main() {
   assert(faq::similarity("what is usability", "What is usability?") == 100);
   assert(faq::similarity("what is usability",
                          "What is the System Usability Scale?") == 0);
+  assert(faq::similarity("define prototype", "What is a prototype?") == 100);
+  assert(faq::similarity("describe prototype", "What is a prototype?") == 100);
+  assert(faq::similarity("explain usability testing",
+                         "What is usability testing?") == 100);
+  assert(faq::similarity("meaning of persona", "What is a user persona?") >=
+         80);
+  assert(faq::similarity("what does WCAG mean", "What does WCAG mean?") ==
+         100);
+  assert(faq::similarity("define prototype",
+                         "What is a low fidelity prototype?") < 100);
   assert(faq::similarity("the is and what", timeQuestion) == 0);
   assert(faq::similarity("weather forecast", weatherQuestion) >= 55);
   assert(faq::similarity("how do you answer question", answerQuestion) >
@@ -98,6 +108,8 @@ int main() {
   assert(bestFaqMatch("what is psram", "psram") > 0);
   assert(bestFaqMatch("how do you answer question", "database") > 0);
   assert(bestFaqMatch("what is usability", "usability_01") > 0);
+  assert(bestFaqMatch("define prototype", "prototype_01") > 0);
+  assert(bestFaqMatch("define usability testing", "usability_testing_01") > 0);
   assert(bestFaqMatch("can you explain fitts's law", "fitts_law_01") > 0);
   assert(bestFaqMatch("what does wcag mean", "wcag_03") > 0);
   assert(bestFaqMatch("what is a microcontroller", "microcontroller_01") > 0);
